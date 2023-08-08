@@ -30,3 +30,5 @@ php add.php
 - 文件上传
 - get
 - post
+
+hello
