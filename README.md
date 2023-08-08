@@ -1,34 +1,23 @@
-# 介绍
-这些waf是在打线上awd编写的
-当时登堂入室，于是参考网上的匹配规则然后写了一个自己的waf
+> AWD攻防WAF 由php编写 轻量 关键字过滤 日志记录 一键部署
 
-waf1-7： 也就是版本1.1 到1.7， 变化不大，主要就是做了一些改进
-add.php: 为当前目录下的所有php文件添加此waf
-waf_v2： 版本v2, 也是最后一个版本，有一个ui界面，算是比较大的改进
-
-waf会拦截所有请求并记录日志，日志文件在根目录，并会将疑似攻击的请求单独记录到攻击日志中并拦截
-建议使用waf7.php
-
-
-
-# 使用
-添加waf,  将其中一个 waf 和 add.php 放入根目录中，并且将该waf改名为 waf.php，并运行add.php即可
-```bash
-php add.php
+# 安装
+上传 `waf.php` 到web根目录
+进入web根目录执行以下命令，waf立即生效
+```shell
+php waf.php
 ```
 
-如果是 waf_v2, 那么还可以访问管理界面
-`http://ip/waf.php?wlb=7f04a3978a2c0bf4fcc394da85c3d916`
 
-其中的wlb参数就是密码，默认密码为 md5("彪彪彪")，也就是 7f04a3978a2c0bf4fcc394da85c3d916
+# 卸载
+直接删除 `waf.php`
 
-如何需要更改密码 设置 $password 变量即可
+# 日志
+日志记录在 `waflog` 目录中，请保该目录有可写的权限
+- 对上传的文件进行拦截，用户上传的文件保存在 waflog/upload 中,文件名为 `ip-port-timestamp`，原本上传的文件内容将清空处理
+- 对 `GET` 参数进行拦截，记录在 `GET.log` 文件中
+- 对 `请求体` 进行拦截, 记录在 `BODY.log` 文件中
+- 对 `请求头`进行拦截 ,记录在 `HEADER.log` 文件中
 
-
-# 检测
-- 请求头
-- 文件上传
-- get
-- post
-
-hello
+# 配置WAF
+如果你想对waf进行配置，你可以对 `define()` 中以 `CONF` 开头的常量进行修改
+编辑 waf.php
