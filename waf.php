@@ -1,2 +1,57 @@
+<?php
+$log_path = dirname($_SERVER['SCRIPT_FILENAME']) . DIRECTORY_SEPARATOR . 'waflog';
 
-<?php define('CONF_LOG_ATTACT_NAME', 'attact.log');if (!file_exists(CONF_LOG_PATH)) {mkdir(CONF_LOG_PATH);}date_default_timezone_set("PRC");class Waf{public $id = '';public $get = [];public $body = [];public $header = [];public $ip = '';public $port = '';public $url = '';public $method = '';public $time = '';public $pattern = "/select|insert|update|delete|load_file|outfile|dumpfile" . "|call_user_func_array|usort|uasort|array_map|create_function|file_put_contents|fwrite|curl|system|eval|assert|echo|cmd" . "|passthru|exec|system|chroot|scandir|chgrp|chown|shell_exec|proc_open|proc_get_status|popen|ini_alter|ini_restore/i";function __construct(){$this->ip = $_SERVER['REMOTE_ADDR'];$this->port = $_SERVER['REMOTE_PORT'];$this->get = $_GET;if ($_POST) {$this->body = $_POST;} else {$this->body[0] = file_get_contents('php://input');}$this->header = $this->getHeader();$this->url = $_SERVER['REQUEST_URI'];$this->method = $_SERVER['REQUEST_METHOD'];$this->time = date('Y-m-d H:i:s');$this->id = $this->getId();}function getId(){return md5(rand(1000000, 100000000));}function check($arr){foreach ($arr as $k => $v) {if (is_array($v)) {$res = $this->check($v);if (!$res['check']) return $res;} else {if (preg_match($this->pattern, $v)) return ['check' => false, 'result' => "$k=$v"];}}return ['check' => true];}function getHeader(){$header = [];foreach ($_SERVER as $k => $v) {if (strpos($k, 'HTTP_') === 0) {$header[substr($k, 5)] = $v;}}return $header;}function log($filename = 'req.log', $log = false){if (!$log) {$log = $this->time . PHP_EOL .$this->ip . ":" . $this->port . PHP_EOL .'method: ' . $this->method . PHP_EOL .'url: ' . $this->url . PHP_EOL .'get: ' . print_r($this->get, true) . PHP_EOL .'body: ' . print_r($this->body, true) . PHP_EOL .'header: ' . print_r($this->header, true);}$log = 'id: ' . $this->id . PHP_EOL .$log.PHP_EOL . '-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-='.PHP_EOL;file_put_contents(CONF_LOG_PATH . '/' . $filename, $log, FILE_APPEND);}function upload(){if (!$_FILES) return;print_r($_FILES);foreach ($_FILES as $k => $file) {file_put_contents(CONF_LOG_PATH . "/{$this->ip}-{$this->id}-$k", file_get_contents($file['tmp_name']));file_put_contents($file['tmp_name'], '');}}}$waf = new Waf();$waf->log();$res = $waf->check([$waf->get, $waf->body, $waf->header]);if (!$res['check']) {$waf->log(CONF_LOG_ATTACT_NAME,$res['result']);}if(CONF_CHECK_UPLOAD_FILE === 'T'){$waf->upload();}
+/**
+ * - 安装选项 ---------------------------------------------------------------------------------------
+ */
+
+define('CONF_LOG_PATH', $log_path);    # 设置日志路径
+define('CONF_CHECK_UPLOAD_FILE', 'T');    # 是否处理文件上传
+define('CONF_WAF_NAME', 'waf.php');    # waf文件名
+
+/**
+ * --------------------------------------------------------------------------------------------------
+ */
+
+function wafload()
+{
+    $waf = "PD9waHAgZGVmaW5lKCdDT05GX0xPR19QQVRIJywgJy4vd2FmbG9nJyk7ZGVmaW5lKCdDT05GX0NIRUNLX1VQTE9BRF9GSUxFJywgJ1QnKTtkZWZpbmUoJ0NPTkZfTE9HX0FUVEFDVF9OQU1FJywgJ2F0dGFjdC5sb2cnKTtpZiAoIWZpbGVfZXhpc3RzKENPTkZfTE9HX1BBVEgpKSB7bWtkaXIoQ09ORl9MT0dfUEFUSCk7fWRhdGVfZGVmYXVsdF90aW1lem9uZV9zZXQoIlBSQyIpO2NsYXNzIFdhZntwdWJsaWMgJGlkID0gJyc7cHVibGljICRnZXQgPSBbXTtwdWJsaWMgJGJvZHkgPSBbXTtwdWJsaWMgJGhlYWRlciA9IFtdO3B1YmxpYyAkaXAgPSAnJztwdWJsaWMgJHBvcnQgPSAnJztwdWJsaWMgJHVybCA9ICcnO3B1YmxpYyAkbWV0aG9kID0gJyc7cHVibGljICR0aW1lID0gJyc7cHVibGljICRwYXR0ZXJuID0gIi9zZWxlY3R8aW5zZXJ0fHVwZGF0ZXxkZWxldGV8bG9hZF9maWxlfG91dGZpbGV8ZHVtcGZpbGUiIC4gInxjYWxsX3VzZXJfZnVuY19hcnJheXx1c29ydHx1YXNvcnR8YXJyYXlfbWFwfGNyZWF0ZV9mdW5jdGlvbnxmaWxlX3B1dF9jb250ZW50c3xmd3JpdGV8Y3VybHxzeXN0ZW18ZXZhbHxhc3NlcnR8ZWNob3xjbWQiIC4gInxwYXNzdGhydXxleGVjfHN5c3RlbXxjaHJvb3R8c2NhbmRpcnxjaGdycHxjaG93bnxzaGVsbF9leGVjfHByb2Nfb3Blbnxwcm9jX2dldF9zdGF0dXN8cG9wZW58aW5pX2FsdGVyfGluaV9yZXN0b3JlL2kiO2Z1bmN0aW9uIF9fY29uc3RydWN0KCl7JHRoaXMtPmlwID0gJF9TRVJWRVJbJ1JFTU9URV9BRERSJ107JHRoaXMtPnBvcnQgPSAkX1NFUlZFUlsnUkVNT1RFX1BPUlQnXTskdGhpcy0+Z2V0ID0gJF9HRVQ7aWYgKCRfUE9TVCkgeyR0aGlzLT5ib2R5ID0gJF9QT1NUO30gZWxzZSB7JHRoaXMtPmJvZHlbMF0gPSBmaWxlX2dldF9jb250ZW50cygncGhwOi8vaW5wdXQnKTt9JHRoaXMtPmhlYWRlciA9ICR0aGlzLT5nZXRIZWFkZXIoKTskdGhpcy0+dXJsID0gJF9TRVJWRVJbJ1JFUVVFU1RfVVJJJ107JHRoaXMtPm1ldGhvZCA9ICRfU0VSVkVSWydSRVFVRVNUX01FVEhPRCddOyR0aGlzLT50aW1lID0gZGF0ZSgnWS1tLWQgSDppOnMnKTskdGhpcy0+aWQgPSAkdGhpcy0+Z2V0SWQoKTt9ZnVuY3Rpb24gZ2V0SWQoKXtyZXR1cm4gbWQ1KHJhbmQoMTAwMDAwMCwgMTAwMDAwMDAwKSk7fWZ1bmN0aW9uIGNoZWNrKCRhcnIpe2ZvcmVhY2ggKCRhcnIgYXMgJGsgPT4gJHYpIHtpZiAoaXNfYXJyYXkoJHYpKSB7JHJlcyA9ICR0aGlzLT5jaGVjaygkdik7aWYgKCEkcmVzWydjaGVjayddKSByZXR1cm4gJHJlczt9IGVsc2Uge2lmIChwcmVnX21hdGNoKCR0aGlzLT5wYXR0ZXJuLCAkdikpIHJldHVybiBbJ2NoZWNrJyA9PiBmYWxzZSwgJ3Jlc3VsdCcgPT4gIiRrPSR2Il07fX1yZXR1cm4gWydjaGVjaycgPT4gdHJ1ZV07fWZ1bmN0aW9uIGdldEhlYWRlcigpeyRoZWFkZXIgPSBbXTtmb3JlYWNoICgkX1NFUlZFUiBhcyAkayA9PiAkdikge2lmIChzdHJwb3MoJGssICdIVFRQXycpID09PSAwKSB7JGhlYWRlcltzdWJzdHIoJGssIDUpXSA9ICR2O319cmV0dXJuICRoZWFkZXI7fWZ1bmN0aW9uIGxvZygkZmlsZW5hbWUgPSAncmVxLmxvZycsICRsb2cgPSBmYWxzZSl7aWYgKCEkbG9nKSB7JGxvZyA9ICR0aGlzLT50aW1lIC4gUEhQX0VPTCAuJHRoaXMtPmlwIC4gIjoiIC4gJHRoaXMtPnBvcnQgLiBQSFBfRU9MIC4nbWV0aG9kOiAnIC4gJHRoaXMtPm1ldGhvZCAuIFBIUF9FT0wgLid1cmw6ICcgLiAkdGhpcy0+dXJsIC4gUEhQX0VPTCAuJ2dldDogJyAuIHByaW50X3IoJHRoaXMtPmdldCwgdHJ1ZSkgLiBQSFBfRU9MIC4nYm9keTogJyAuIHByaW50X3IoJHRoaXMtPmJvZHksIHRydWUpIC4gUEhQX0VPTCAuJ2hlYWRlcjogJyAuIHByaW50X3IoJHRoaXMtPmhlYWRlciwgdHJ1ZSk7fSRsb2cgPSAnaWQ6ICcgLiAkdGhpcy0+aWQgLiBQSFBfRU9MIC4kbG9nLlBIUF9FT0wgLiAnLT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09Jy5QSFBfRU9MO2ZpbGVfcHV0X2NvbnRlbnRzKENPTkZfTE9HX1BBVEggLiAnLycgLiAkZmlsZW5hbWUsICRsb2csIEZJTEVfQVBQRU5EKTt9ZnVuY3Rpb24gdXBsb2FkKCl7aWYgKCEkX0ZJTEVTKSByZXR1cm47cHJpbnRfcigkX0ZJTEVTKTtmb3JlYWNoICgkX0ZJTEVTIGFzICRrID0+ICRmaWxlKSB7ZmlsZV9wdXRfY29udGVudHMoQ09ORl9MT0dfUEFUSCAuICIveyR0aGlzLT5pcH0teyR0aGlzLT5pZH0tJGsiLCBmaWxlX2dldF9jb250ZW50cygkZmlsZVsndG1wX25hbWUnXSkpO2ZpbGVfcHV0X2NvbnRlbnRzKCRmaWxlWyd0bXBfbmFtZSddLCAnJyk7fX19JHdhZiA9IG5ldyBXYWYoKTskd2FmLT5sb2coKTskcmVzID0gJHdhZi0+Y2hlY2soWyR3YWYtPmdldCwgJHdhZi0+Ym9keSwgJHdhZi0+aGVhZGVyXSk7aWYgKCEkcmVzWydjaGVjayddKSB7JHdhZi0+bG9nKENPTkZfTE9HX0FUVEFDVF9OQU1FLCRyZXNbJ3Jlc3VsdCddKTt9aWYoQ09ORl9DSEVDS19VUExPQURfRklMRSA9PT0gJ1QnKXskd2FmLT51cGxvYWQoKTt9";
+    $waf = '<?php ' . "define('CONF_LOG_PATH','" . CONF_LOG_PATH . "');" . "define('CONF_CHECK_UPLOAD_FILE','" . CONF_CHECK_UPLOAD_FILE . "');" . base64_decode($waf);
+    file_put_contents(CONF_WAF_NAME, $waf);
+}
+
+
+function wafstr($wafpath)
+{
+    return "<?php if (!defined('WAF')) {define('WAF', true);if(file_exists('$wafpath')) require_once('$wafpath');}?>";
+}
+
+// 添加字符串
+function addwafstr($filepath, $wafpath)
+{
+    echo $filepath . " " . $wafpath . PHP_EOL;
+    file_put_contents($filepath, wafstr($wafpath) . file_get_contents($filepath));
+}
+
+// 要添加的字符串  
+function add($root)
+{
+    $resource = opendir($root);
+    while (false !== ($row = readdir($resource))) {
+        if ($row === '.' || $row === '..' || $row === 'waf.php') continue;
+        $filename = $root . '/' . $row;
+        if (is_file($filename)) {
+            if (strrchr($row, '.') === '.php') {  # 如果时php文件就添加
+                $wafpath = '';
+                $c = substr_count($filename, '/');
+                for ($i = 1; $i < $c; $i++) $wafpath .= '../';
+                $wafpath .= CONF_WAF_NAME;
+                addwafstr($filename, $wafpath);
+            }
+        } else {
+            add($root . '/' . $row);
+        }
+    }
+}
+
+add('.');
