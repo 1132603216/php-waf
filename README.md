@@ -23,8 +23,9 @@ php waf.php
 # 配置
 ```php
 // 安装选项
-define('CONF_LOG_PATH',$log_path);    # 设置日志目录路径
-define('CONF_CHECK_UPLOAD_FILE','T');    # 是否处理文件上传 T | N
+define('CONF_LOG_PATH', $log_path);    # 设置日志路径
+define('CONF_CHECK_UPLOAD_FILE', 'T');    # 是否处理文件上传
+define('CONF_WAF_NAME', 'waf.php');    # waf文件名
 ```
 
 你可以保持默认
