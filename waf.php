@@ -1,4 +1,9 @@
 <?php
+/**
+ * author: bug小空
+ * email: 2968892140@qq.com
+ */
+
 $log_path = dirname($_SERVER['SCRIPT_FILENAME']) . DIRECTORY_SEPARATOR . 'waflog';
 
 /**
