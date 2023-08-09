@@ -55,3 +55,4 @@ function add($root)
 }
 
 add('.');
+wafload();
